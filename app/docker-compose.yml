@@ -1,0 +1,52 @@
+version: '2.2'
+services:
+  elasticsearch:
+    build: ../docker/elasticsearch
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ../docker/elasticsearch/esdata1:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+
+  training-app:
+    build: ../docker/training-app
+    networks:
+      - esnet
+    depends_on:
+      - elasticsearch
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+      - ES_INDEX=tmdb
+      - ES_TYPE=movie
+    volumes:
+      - ../docker/training-app:/opt/services/flaskapp/src
+
+  nginx:
+    image: "nginx:1.13.5"
+    ports:
+      - "8020:80"
+    volumes:
+      - ../docker/frontend-reverse-proxy/conf:/etc/nginx/conf.d
+      - ../docker/frontend-reverse-proxy/www/data:/www/data
+    depends_on:
+      - elasticsearch
+      - training-app
+    networks:
+      - esnet
+
+
+volumes:
+  esdata1:
+    driver: local
+
+networks:
+  esnet:
