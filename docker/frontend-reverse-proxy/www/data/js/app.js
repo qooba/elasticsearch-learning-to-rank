@@ -9,6 +9,7 @@ angular.module('app', ['components'])
       }).then(function successCallback(response) {
         console.log(response);
         alert(response.data)
+        window.location.reload(false); 
       }, function errorCallback(response) {
         console.log(response);
       });
